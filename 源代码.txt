@@ -1,0 +1,153 @@
+from hashlib import sha1
+import pymysql
+
+class OnlineBookstore:
+
+    def __init__(self):
+        # 初始化数据库连接
+        self.conn = pymysql.connect(host="localhost", port=3306, user="root", passwd="Gyhaimh6", db="bookstore")
+        self.cursor = self.conn.cursor()
+
+    # 用户注册
+    def register(self):
+        print("=============欢迎注册=============")
+        username = input("请输入用户名：")
+        password = input("请输入密码：")
+
+        # 使用SHA-1加密密码
+        password_hash = sha1(password.encode()).hexdigest()
+
+        # 检查用户名是否已存在
+        if self.check_user_exists(username):
+            print("用户名已存在，请重新注册！")
+            return
+
+        try:
+            sql = "INSERT INTO users (username, password) VALUES (%s, %s)"
+            self.cursor.execute(sql, (username, password_hash))
+            self.conn.commit()
+            print("注册成功！")
+
+        except Exception as e:
+            self.conn.rollback()
+            print("注册失败：", str(e))
+
+    # 用户登录
+    def login(self):
+        print("=============欢迎登录=============")
+        username = input("请输入用户名：")
+        password = input("请输入密码：")
+
+        password_hash = sha1(password.encode()).hexdigest()
+
+        if self.check_user_credentials(username, password_hash):
+            print("登录成功！")
+            self.show_menu()
+        else:
+            print("用户名或密码错误！")
+
+    # 检查用户名是否已存在
+    def check_user_exists(self, username):
+        sql = "SELECT * FROM users WHERE username = %s"
+        self.cursor.execute(sql, username)
+        result = self.cursor.fetchone()
+        return result is not None
+
+    # 检查用户名和密码是否匹配
+    def check_user_credentials(self, username, password_hash):
+        sql = "SELECT * FROM users WHERE username = %s AND password = %s"
+        self.cursor.execute(sql, (username, password_hash))
+        result = self.cursor.fetchone()
+        return result is not None
+
+    # 显示主菜单
+    def show_menu(self):
+        while True:
+            print("=======欢迎进入网上书店=======")
+            print("1. 添加书籍")
+            print("2. 查看书籍列表")
+            print("3. 购买书籍")
+            print("4. 退出")
+            choice = input("请输入选项：")
+
+            if choice == "1":
+                self.add_book()
+            elif choice == "2":
+                self.view_books()
+            elif choice == "3":
+                self.buy_book()
+            elif choice == "4":
+                break
+            else:
+                print("请正确输入选项！")
+
+    # 添加书籍
+    def add_book(self):
+        print("=========添加书籍==========")
+        title = input("请输入书籍标题：")
+        author = input("请输入作者：")
+        price = float(input("请输入价格："))
+
+        try:
+            sql = "INSERT INTO books (title, author, price) VALUES (%s, %s, %s)"
+            self.cursor.execute(sql, (title, author, price))
+            self.conn.commit()
+            print("书籍添加成功！")
+
+        except Exception as e:
+            self.conn.rollback()
+            print("书籍添加失败：", str(e))
+
+    # 查看书籍列表
+    def view_books(self):
+        print("=========书籍列表==========")
+        try:
+            sql = "SELECT * FROM books"
+            self.cursor.execute(sql)
+            books = self.cursor.fetchall()
+            for book in books:
+                print(f"书籍ID: {book[0]}, 标题: {book[1]}, 作者: {book[2]}, 价格: {book[3]}")
+        except Exception as e:
+            print("查询失败：", str(e))
+
+    # 购买书籍
+    def buy_book(self):
+        print("=========购买书籍==========")
+        book_id = input("请输入要购买的书籍ID：")
+
+        try:
+            sql = "SELECT * FROM books WHERE id = %s"
+            self.cursor.execute(sql, book_id)
+            book = self.cursor.fetchone()
+            if book:
+                print(f"您购买了书籍: {book[1]}, 价格: {book[3]}")
+            else:
+                print("未找到该书籍！")
+        except Exception as e:
+            print("购买失败：", str(e))
+
+    # 关闭数据库连接
+    def close_connection(self):
+        self.cursor.close()
+        self.conn.close()
+
+def main():
+    bookstore = OnlineBookstore()
+    while True:
+        print("1. 注册")
+        print("2. 登录")
+        print("3. 退出")
+        choice = input("请输入选项：")
+
+        if choice == "1":
+            bookstore.register()
+        elif choice == "2":
+            bookstore.login()
+        elif choice == "3":
+            bookstore.close_connection()
+            break
+        else:
+            print("请正确输入选项！")
+
+if __name__ == '__main__':
+    main()
