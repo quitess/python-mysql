@@ -1,0 +1,676 @@
+import pymysql  # 导入pymysql模块，用于与MySQL数据库进行交互
+import tkinter as tk  # 导入tkinter模块，并将其重命名为tk，用于创建GUI界面的应用程序
+from tkinter import ttk  # ttk模块是tkinter模块的一个子模块
+from tkinter import scrolledtext  # 从tkinter模块中导入scrolledtext类，用于创建具有滚动功能的文本框
+from tkinter import messagebox, simpledialog
+
+
+# 从tkinter模块中导入messagebox和simpledialog类，用于创建消息框和简单对话框，用于与用户进行交互
+
+
+class OnlineBookstoreGUI:  # 定义一个名为OnlineBookstoreGUI的类，创建在线书店的图形用户界面
+    # 构造函数__init__
+    def __init__(self, root):
+        # 初始化主窗口
+        self.root = root  # 将传入的 root 参数赋值给对象的 self.root 属性
+        self.root.title("Online Bookstore")  # 设置主窗口标题为 "Online Bookstore"
+
+        # 初始化数据库连接
+        self.conn = pymysql.connect(host="localhost", port=3306, user="root", passwd="Gyhaimh6", db="bookstore")
+        # 使用 pymysql 连接 MySQL 数据库，提供主机地址、端口、用户名、密码和数据库名称
+        self.cursor = self.conn.cursor()
+        # 调用 self.conn（数据库连接对象）的 cursor() 方法来创建一个新的游标对象，并将其赋值给 self.cursor 变量
+
+        # 创建登录和注册框架
+        '''
+        创建了一个名为 self.login_frame 的框架（Frame）组件，并将其添加到了主窗口（root）中。
+        这个框架将在登录页面显示，并包含了登录页面的各个元素。这些元素将在登录页面的布局中使用 pack() 方法进行排列。
+        '''
+        self.login_frame = tk.Frame(root)  # 创建登录框架（容器）
+        self.register_frame = tk.Frame(root)  # 创建注册框架
+        self.user_frame = tk.Frame(root)  # 创建用户主菜单框架
+        self.admin_frame = tk.Frame(root, width=600, height=400)  # 创建管理员主菜单框架，设置大小
+
+        self.login_frame.pack()  # 默认显示登录界面
+        self.register_frame.pack_forget()  # 默认隐藏注册界面
+        self.user_frame.pack_forget()  # 默认隐藏用户主菜单界面
+        self.admin_frame.pack_forget()  # 默认隐藏管理员主菜单界面
+
+        '''
+        在Python中，`self`是一个约定俗成的名称，用于表示类的实例对象。在类中定义属性或方法时，需要使用`self`来引用该对象的属性或方法。
+        `self.large_font = ("Calibri", 20)`是在类`OnlineBookstoreGUI`的构造函数`__init__`中创建一个名为`large_font`的实例属性。
+        这个属性的值是一个元组，包含字体名称"Calibri"和字体大小20。`self`表示类的实例，
+        通过`self.large_font`，您可以在整个类的范围内访问和使用这个属性，以便在不同的部分设置和引用相同的字体样式。
+        '''
+        self.large_font = ("Calibri", 20)  # 定义字体样式和大小，以供后续界面元素使用
+
+        # 登录界面元素
+        # 构造函数，创造实例
+        self.login_label = tk.Label(self.login_frame, text="登录", font=self.large_font)  # 创建登录标签
+        self.username_label = tk.Label(self.login_frame, text="用户名：", font=self.large_font)  # 创建用户名标签
+        self.password_label = tk.Label(self.login_frame, text="密码：", font=self.large_font)  # 创建密码标签
+        self.username_entry = tk.Entry(self.login_frame, font=self.large_font)  # Tkinter 库中的 Entry 类，用于创建文本输入框
+        self.password_entry = tk.Entry(self.login_frame, show="*", font=self.large_font)  # 创建密码输入框，显示星号
+        self.login_button = tk.Button(self.login_frame, text="登录", command=self.login, font=self.large_font)
+        # 创建登录按钮，设置点击事件为 self.login 方法
+
+        self.register_button = tk.Button(self.login_frame, text="注册", command=self.show_register_frame,
+                                         font=self.large_font)  # 创建注册按钮，设置点击事件为 self.show_register_frame 方法
+        self.logout_button = tk.Button(self.login_frame, text="退出", command=self.exit, font=self.large_font)
+        # 创建退出按钮，设置点击事件为 self.exit 方法
+
+        # 注册界面元素
+        self.register_label = tk.Label(self.register_frame, text="注册", font=self.large_font)  # 创建注册标签
+        self.new_username_label = tk.Label(self.register_frame, text="新用户名：", font=self.large_font)
+        # 创建新用户名标签
+        self.new_password_label = tk.Label(self.register_frame, text="新密码：", font=self.large_font)
+        # 创建新密码标签
+        self.new_username_entry = tk.Entry(self.register_frame, font=self.large_font)  # 创建新用户名输入框
+        self.new_password_entry = tk.Entry(self.register_frame, show="*", font=self.large_font)
+        # 创建新密码输入框，显示星号
+        self.register_submit_button = tk.Button(self.register_frame, text="注册", command=self.register,
+                                                font=self.large_font)  # 创建注册提交按钮，设置点击事件为 self.register 方法
+        self.back_to_login_button = tk.Button(self.register_frame, text="返回登录", command=self.show_login_frame,
+                                              font=self.large_font)  # 创建返回登录按钮，设置点击事件为 self.show_login_frame 方法
+
+        # 用户主菜单元素
+        self.user_menu_label = tk.Label(self.user_frame, text="用户主菜单", font=self.large_font)
+        # 创建用户主菜单标签
+        self.view_books_button = tk.Button(self.user_frame, text="查看书籍列表", command=self.view_books,
+                                           font=self.large_font)  # 创建查看书籍列表按钮，设置点击事件为 self.view_books 方法
+        self.buy_book_button = tk.Button(self.user_frame, text="购买书籍", command=self.buy_book, font=self.large_font)
+        # 创建购买书籍按钮，设置点击事件为 self.buy_book 方法
+        self.view_purchased_books_button = tk.Button(self.user_frame, text="查看已购书籍",
+                                                     command=self.view_purchased_books, font=self.large_font)
+        # 创建查看已购书籍按钮，设置点击事件为 self.view_purchased_books 方法
+        self.user_change_password_button = tk.Button(self.user_frame, text="修改密码",
+                                                     command=self.change_password_user, font=self.large_font)
+        # 创建修改密码按钮，设置点击事件为 self.change_password_user 方法
+        self.user_logout_button = tk.Button(self.user_frame, text="退出登录", command=self.logout, font=self.large_font)
+        # 创建退出登录按钮，设置点击事件为 self.logout 方法
+
+        # 管理员主菜单元素
+        self.admin_menu_label = tk.Label(self.admin_frame, text="管理员主菜单", font=self.large_font)
+        # 创建管理员主菜单标签
+        self.add_book_button = tk.Button(self.admin_frame, text="添加书籍", command=self.add_book, font=self.large_font)
+        # 创建添加书籍按钮，设置点击事件为 self.add_book 方法
+        self.modify_book_button = tk.Button(self.admin_frame, text="修改书籍信息", command=self.modify_book,
+                                            font=self.large_font)  # 创建修改书籍信息按钮，设置点击事件为 self.modify_book 方法
+        self.delete_book_button = tk.Button(self.admin_frame, text="删除书籍", command=self.delete_book,
+                                            font=self.large_font)  # 创建删除书籍按钮，设置点击事件为 self.delete_book 方法
+        self.view_books_admin_button = tk.Button(self.admin_frame, text="查看书籍列表", command=self.view_books_admin,
+                                                 font=self.large_font)  # 创建查看书籍列表按钮，设置点击事件为 self.view_books_admin 方法
+        self.view_users_button = tk.Button(self.admin_frame, text="查看所有用户信息", command=self.view_users,
+                                           font=self.large_font)  # 创建查看所有用户信息按钮，设置点击事件为 self.view_users 方法
+        self.view_orders_button = tk.Button(self.admin_frame, text="查看订单信息", command=self.view_orders,
+                                            font=self.large_font)  # 创建查看订单信息按钮，设置点击事件为 self.view_orders 方法
+        self.admin_change_password_button = tk.Button(self.admin_frame, text="修改密码",
+                                                      command=self.change_password_admin, font=self.large_font)
+        # 创建修改密码按钮，设置点击事件为 self.change_password_admin 方法
+        self.admin_logout_button = tk.Button(self.admin_frame, text="退出登录", command=self.logout,
+                                             font=self.large_font)  # 创建退出登录按钮，设置点击事件为 self.logout 方法
+
+        # 将登录界面的各个元素使用 pack() 方法进行布局
+        self.login_label.pack()  # 登录标签
+        self.username_label.pack()  # 用户名标签
+        self.username_entry.pack()  # 用户名输入框
+        self.password_label.pack()  # 密码标签
+        self.password_entry.pack()  # 密码输入框
+        self.login_button.pack()  # 登录按钮
+        self.register_button.pack()  # 注册按钮
+        self.logout_button.pack()  # 退出按钮
+
+        # 将注册界面的各个元素使用 pack() 方法进行布局
+        self.register_label.pack()  # 注册标签
+        self.new_username_label.pack()  # 新用户名标签
+        self.new_username_entry.pack()  # 新用户名输入框
+        self.new_password_label.pack()  # 新密码标签
+        self.new_password_entry.pack()  # 新密码输入框
+        self.register_submit_button.pack()  # 注册提交按钮
+        self.back_to_login_button.pack()  # 返回登录按钮
+
+        # 将用户主菜单的各个元素使用 pack() 方法进行布局
+        self.user_menu_label.pack()  # 用户主菜单标签
+        self.view_books_button.pack()  # 查看书籍列表按钮
+        self.buy_book_button.pack()  # 购买书籍按钮
+        self.view_purchased_books_button.pack()  # 查看已购书籍按钮
+        self.user_change_password_button.pack()  # 修改密码按钮
+        self.user_logout_button.pack()  # 退出登录按钮
+
+        # 将管理员主菜单的各个元素使用 pack() 方法进行布局
+        self.admin_menu_label.pack()  # 管理员主菜单标签
+        self.add_book_button.pack()  # 添加书籍按钮
+        self.modify_book_button.pack()  # 修改书籍信息按钮
+        self.delete_book_button.pack()  # 删除书籍按钮
+        self.view_books_admin_button.pack()  # 查看书籍列表按钮
+        self.view_users_button.pack()  # 查看所有用户信息按钮
+        self.view_orders_button.pack()  # 查看订单信息按钮
+        self.admin_change_password_button.pack()  # 修改密码按钮
+        self.admin_logout_button.pack()  # 退出登录按钮
+
+        # 当前登录用户
+        self.current_user = None  # 初始化当前登录用户属性，初始值为 None，用于跟踪当前登录的用户
+
+    def show_login_frame(self):
+        self.login_frame.pack()
+        self.register_frame.pack_forget()
+        self.user_frame.pack_forget()
+        self.admin_frame.pack_forget()
+
+    def show_register_frame(self):
+        self.login_frame.pack_forget()
+        self.register_frame.pack()  # 显示注册框架
+        self.user_frame.pack_forget()
+        self.admin_frame.pack_forget()
+
+    def show_user_menu(self, username):
+        # 隐藏登录、注册和管理员框架
+        self.login_frame.pack_forget()
+        self.register_frame.pack_forget()
+        self.admin_frame.pack_forget()
+        # 显示用户框架
+        self.user_frame.pack()
+        # 设置当前用户为已登录用户
+        self.current_user = username
+
+    def show_admin_menu(self):
+        # 隐藏登录、注册、用户菜单框架，显示管理员菜单框架
+        self.login_frame.pack_forget()
+        self.register_frame.pack_forget()
+        self.user_frame.pack_forget()
+        self.admin_frame.pack()
+
+        # 设置当前用户为管理员
+        self.current_user = "admin"
+
+    def login(self):
+        # 从用户名和密码输入框中获取用户输入
+        username = self.username_entry.get()
+        password = self.password_entry.get()
+
+        # 调用 check_user_credentials 方法检查用户名和密码是否匹配
+        if self.check_user_credentials(username, password):
+            # 如果用户名和密码匹配，显示成功登录的消息框
+            messagebox.showinfo("登录成功", "登录成功！")
+            # messagebox.showinfo 是 tkinter 中的一个函数，用于创建一个信息框
+
+            # 检查用户是否为管理员
+            if self.is_admin(username):
+                # 如果用户是管理员，显示管理员菜单
+                self.show_admin_menu()
+            else:
+                # 如果用户是普通用户，显示用户菜单
+                self.show_user_menu(username)
+        else:
+            # 如果用户名和密码不匹配，显示登录失败的错误消息框
+            messagebox.showerror("登录失败", "用户名或密码错误！")
+            # messagebox.showerror 是一个用于在 tkinter 应用程序中显示错误消息对话框的函数
+
+    # register 方法
+    def register(self):
+        # 获取新用户名和密码
+        new_username = self.new_username_entry.get()  # 从新用户名输入框获取新用户名
+        new_password = self.new_password_entry.get()  # 从新密码输入框获取新密码
+
+        # 检查密码是否已存在
+        if self.check_password_duplicate(new_password):  # 调用 check_password_duplicate 方法检查密码是否已存在
+            messagebox.showerror("注册失败", "密码已存在，请重新选择密码！")  # 显示错误消息框
+        else:
+            try:
+                # 插入用户信息到数据库
+                sql = "INSERT INTO user_info (username, password) VALUES (%s, %s)"  # SQL 插入语句
+                self.cursor.execute(sql, (new_username, new_password))  # 执行插入操作，将新用户名和密码插入数据库
+                self.conn.commit()  # 提交事务
+
+                # 默认用户权限为普通用户
+                user_id = self.get_user_id(new_username)  # 获取新用户的用户ID
+                self.set_user_permission(user_id, is_admin=False)  # 设置用户权限为普通用户
+
+                messagebox.showinfo("注册成功", "注册成功！")  # 显示注册成功的消息框
+                self.show_login_frame()  # 切换回登录界面
+
+            except Exception as e:
+                self.conn.rollback()  # 发生异常时回滚数据库事务
+                messagebox.showerror("注册失败", f"注册失败：{str(e)}")  # 显示注册失败的错误消息框
+
+                # change_password_user 和 change_password_admin 方法
+
+    def change_password_user(self):
+        if self.current_user is None:
+            messagebox.showerror("错误", "请先登录！")
+            return
+
+        new_password = simpledialog.askstring("修改密码", "请输入新密码：", show="*")
+        # simpledialog.askstring 是 Python Tkinter 库中的一个函数，用于创建一个简单的对话框
+
+        if new_password:
+            # 检查新密码是否与数据库中的任何密码相同
+            if self.check_password_duplicate(new_password):
+                messagebox.showerror("密码修改失败", "新密码与已有密码重复，请选择不同的密码！")
+            else:
+                try:
+                    # 更新用户密码
+                    sql = "UPDATE user_info SET password = %s WHERE username = %s"
+                    self.cursor.execute(sql, (new_password, self.current_user))
+                    self.conn.commit()
+                    messagebox.showinfo("密码修改成功", "密码修改成功！")
+                except Exception as e:
+                    self.conn.rollback()
+                    # rollback() 是数据库连接对象上的方法，用于取消事务中的所有未提交的更改，将数据库恢复到事务开始之前的状态
+                    messagebox.showerror("密码修改失败", f"密码修改失败：{str(e)}")
+
+    def change_password_admin(self):
+        if self.current_user != "admin":
+            messagebox.showerror("权限不足", "只有管理员可以修改密码！")
+            return  # 如果当前用户不是管理员，此行代码将导致函数提前退出，不再执行后续代码
+
+        try:
+            # 获取所有用户信息
+            sql = "SELECT id, username FROM user_info"
+            self.cursor.execute(sql)
+            users = self.cursor.fetchall()
+
+            # 构建用户列表字符串
+            user_list = "\n".join([f"用户ID: {user[0]}, 用户名: {user[1]}" for user in users])
+
+            # 弹出对话框，要求管理员选择要修改密码的用户ID
+            user_id = simpledialog.askinteger("修改密码", f"请选择要修改密码的用户ID：\n{user_list}")
+
+            if user_id is not None:
+                new_password = simpledialog.askstring("修改密码", "请输入新密码：", show="*")
+
+                if new_password:
+                    # 检查新密码是否与数据库中的任何密码相同
+                    if self.check_password_duplicate(new_password):
+                        messagebox.showerror("密码修改失败", "新密码与已有密码重复，请选择不同的密码！")
+                    else:
+                        try:
+                            # 更新用户密码
+                            sql = "UPDATE user_info SET password = %s WHERE id = %s"
+                            self.cursor.execute(sql, (new_password, user_id))
+                            self.conn.commit()
+                            messagebox.showinfo("密码修改成功", "密码修改成功！")
+                        except Exception as e:
+                            self.conn.rollback()
+                            messagebox.showerror("密码修改失败", f"密码修改失败：{str(e)}")
+        except Exception as e:
+            messagebox.showerror("错误", f"发生错误：{str(e)}")
+            # f" 开始了一个格式化字符串
+            # {} 是一个占位符，用于插入变量的值
+            # str(e) 表示将异常对象 e 转换为字符串
+
+    # 大小写！！！改为sql = "SELECT * FROM user_info WHERE BINARY password = %s"即可
+    # 添加一个新的方法检查密码是否与数据库中的任何密码重复
+    def check_password_duplicate(self, password):
+        sql = "SELECT * FROM user_info WHERE password = %s"
+        self.cursor.execute(sql, password)
+        result = self.cursor.fetchone()
+        return result is not None
+
+    def check_user_exists(self, username):
+        sql = "SELECT * FROM user_info WHERE username = %s"
+        self.cursor.execute(sql, username)
+        result = self.cursor.fetchone()
+        return result is not None
+
+    def check_user_credentials(self, username, password):
+        """
+        检查用户名和密码是否与数据库中的记录匹配。
+        在Python中，self 是一个约定俗成的名称，通常用作类方法的第一个参数，用来引用类的实例。
+        Args:
+            username (str): 用户提供的用户名。
+            password (str): 用户提供的密码。
+        Returns:
+            bool: 如果用户名和密码匹配数据库中的记录，则返回 True，否则返回 False。
+        """
+        # 构建SQL查询语句，检查数据库中是否存在具有提供的用户名和密码的记录
+        sql = "SELECT * FROM user_info WHERE username = %s AND password = %s"
+        # 使用执行器对象执行SQL查询，传入用户名和密码作为参数
+        self.cursor.execute(sql, (username, password))
+        # 获取查询结果，如果有匹配的记录，则返回结果
+        result = self.cursor.fetchone()
+        # 如果查询结果不为 None，表示用户名和密码匹配，返回 True，否则返回 False
+        return result is not None
+
+    def get_user_id(self, username):
+        sql = "SELECT id FROM user_info WHERE username = %s"
+        self.cursor.execute(sql, username)
+        result = self.cursor.fetchone()
+        return result[0] if result else None
+        # 如果找到匹配的用户名，返回该用户的ID；否则返回 None
+
+    def is_admin(self, username):
+        # 获取用户ID
+        user_id = self.get_user_id(username)
+        # get_user_id 方法在数据库中查找与指定用户名关联的用户ID，并将其返回。
+
+        # 如果找到用户ID
+        if user_id is not None:
+            # 查询用户权限表，检查用户是否是管理员
+            sql = "SELECT is_admin FROM user_permissions WHERE user_id = %s"
+            self.cursor.execute(sql, user_id)
+            result = self.cursor.fetchone()  # 获取查询结果的第一行
+            #
+            # 如果找到用户权限信息并且 is_admin 列的值为 1，表示用户是管理员
+            return result[0] == 1 if result else False  # 三元运算符
+
+        return False  # 如果未找到用户ID，或未找到用户权限信息，则返回 False，表示用户不是管理员
+
+    def set_user_permission(self, user_id, is_admin=False):  # 默认为普通用户
+        try:
+            sql = "INSERT INTO user_permissions (user_id, is_admin) VALUES (%s, %s)"
+            self.cursor.execute(sql, (user_id, int(is_admin)))
+            self.conn.commit()
+        except Exception as e:
+            self.conn.rollback()
+            print("设置权限失败：", str(e))
+
+    def view_books(self):
+        try:
+            # 构建 SQL 查询语句，从数据库中选择所有书籍信息
+            sql = "SELECT * FROM books"
+            self.cursor.execute(sql)  # execute() 是游标对象的方法，用于执行SQL查询
+            books = self.cursor.fetchall()  # 执行查询并获取所有书籍数据
+
+            # 创建一个包含书籍信息的字符串，每本书籍的信息以换行符分隔
+            book_list = "\n".join(
+                [f"书籍ID: {book[0]}, 标题: {book[1]}, 作者: {book[2]}, 价格: {book[3]}" for book in books])
+            # "\n".join(...) 是一个字符串方法，它将传入的可迭代对象中的元素连接成一个字符串，每个元素之间以换行符 \n 分隔
+            # 列表推导式，用于创建包含每本书籍信息的字符串列表
+
+            # 使用消息框（messagebox）显示书籍列表
+            messagebox.showinfo("书籍列表", book_list)
+        except Exception as e:
+            # 如果查询或其他操作发生异常，显示错误消息
+            messagebox.showerror("查询失败", f"查询失败：{str(e)}")
+
+    # order_data为什么没有体现???
+    def buy_book(self):  # 浏览并购买书籍
+        try:
+            sql = "SELECT * FROM books"
+            self.cursor.execute(sql)
+            books = self.cursor.fetchall()
+            book_list = "\n".join(
+                [f"书籍ID: {book[0]}, 标题: {book[1]}, 作者: {book[2]}, 价格: {book[3]}" for book in books])
+            book_id = simpledialog.askinteger("购买书籍", f"请选择要购买的书籍ID：\n{book_list}")
+            if book_id is not None:
+                # 获取书籍信息
+                sql = "SELECT * FROM books WHERE id = %s"
+                self.cursor.execute(sql, book_id)
+                book = self.cursor.fetchone()
+                if book:
+                    # 插入购买记录
+                    sql = "INSERT INTO orders (user_id, book_id) VALUES (%s, %s)"
+                    self.cursor.execute(sql, (self.get_user_id(self.current_user), book_id))
+                    self.conn.commit()
+                    messagebox.showinfo("购买成功", f"您购买了书籍: {book[1]}, 价格: {book[3]}")
+                else:
+                    messagebox.showerror("购买失败", "未找到该书籍！")
+
+        except Exception as e:
+            messagebox.showerror("购买失败", f"购买失败：{str(e)}")
+
+    def view_purchased_books(self):  # 查询并显示当前用户已购书籍的列表
+        try:
+            sql = "SELECT b.title, b.author, b.price FROM orders o JOIN books b ON o.book_id = b.id WHERE o.user_id = %s"
+            self.cursor.execute(sql, self.get_user_id(self.current_user))
+            books = self.cursor.fetchall()
+            book_list = "\n".join([f"标题: {book[0]}, 作者: {book[1]}, 价格: {book[2]}" for book in books])
+            messagebox.showinfo(f"已购书籍列表 ({self.current_user})", book_list)
+            # {self.current_user} 是一个字符串插值，用于将 self.current_user 变量的值插入到字符串中
+            # 在这个特定的上下文中，它用于构建一个弹出消息框（messagebox）的标题
+
+        except Exception as e:
+            messagebox.showerror("查询失败", f"查询失败：{str(e)}")
+
+    def add_book(self):
+        # 创建一个新的顶级窗口，用于添加书籍信息
+        add_book_window = tk.Toplevel(self.root)  # tk.Toplevel 是 tkinter 中用于创建顶级窗口（子窗口）的类
+        # add_book_window 是一个 tk.Toplevel 对象
+        add_book_window.title("添加书籍")  # 设置窗口标题为 "添加书籍"
+
+        # 创建标签和输入框，用于输入书籍信息
+        title_label = tk.Label(add_book_window, text="书名：", font=self.large_font)  # 创建书名标签
+        title_entry = tk.Entry(add_book_window, font=self.large_font)  # 创建书名输入框
+
+        author_label = tk.Label(add_book_window, text="作者：", font=self.large_font)  # 创建作者标签
+        author_entry = tk.Entry(add_book_window, font=self.large_font)  # 创建作者输入框
+
+        price_label = tk.Label(add_book_window, text="价格：", font=self.large_font)  # 创建价格标签
+        price_entry = tk.Entry(add_book_window, font=self.large_font)  # 创建价格输入框
+
+        # 创建添加按钮，设置点击事件为 self.add_book_to_database 方法，并传递输入框中的书籍信息
+        add_button = tk.Button(add_book_window, text="添加", command=lambda: self.add_book_to_database(
+            title_entry.get(), author_entry.get(), price_entry.get(), add_book_window), font=self.large_font)
+        # Lambda表达式的作用是创建一个匿名函数，该函数会调用 self.add_book_to_database 方法并传递特定的参数
+
+        # 使用 pack() 方法对标签、输入框和按钮进行布局
+        # pack()方法是Tkinter用于管理窗口小部件布局的一种方式，它会按照它们添加到容器中的顺序，一个接一个地将小部件放置在容器中
+        title_label.pack()
+        title_entry.pack()
+        author_label.pack()
+        author_entry.pack()
+        price_label.pack()
+        price_entry.pack()
+        add_button.pack()
+
+    # add_book_to_database 方法
+    def add_book_to_database(self, title, author, price, window):
+        try:
+            # 检查是否存在具有相同信息的书籍
+            if self.check_book_exists(title, author, price):
+                messagebox.showerror("添加失败", "具有相同信息的书籍已存在，请检查书籍信息！")
+                # 第一个参数是错误消息框的标题,第二个参数是错误消息的内容
+
+            else:
+                # 插入书籍信息
+                sql = "INSERT INTO books (title, author, price) VALUES (%s, %s, %s)"
+                self.cursor.execute(sql, (title, author, price))
+                # 一旦 execute 方法被调用，它会将 SQL 查询发送到数据库服务器。数据库服务器会解析并执行这个查询，根据你的指令插入新的书籍信息
+                self.conn.commit()  # self.conn.commit() 用于在成功插入新书籍信息后将更改提交到数据库中，以确保新书籍信息被永久保存
+                messagebox.showinfo("添加成功", "书籍添加成功！")
+                window.destroy()  # 调用 window.destroy()，可以关闭当前的窗口
+        except Exception as e:  # except Exception as e 用于捕获所有类型的异常，并将异常对象存储在变量 e 中
+            self.conn.rollback()  # 回滚数据库事务，以确保数据库不会因错误而被更改
+            messagebox.showerror("添加失败", f"添加失败：{str(e)}")
+
+    # 添加一个新的方法检查是否存在具有相同信息的书籍
+    def check_book_exists(self, title, author, price):
+        sql = "SELECT * FROM books WHERE title = %s AND author = %s AND price = %s"
+        self.cursor.execute(sql, (title, author, price))  # execute 是游标对象的一个方法，用于执行 SQL 查询或命令
+        result = self.cursor.fetchone()
+        return result is not None
+
+    def modify_book(self):
+        try:
+            sql = "SELECT * FROM books"
+            self.cursor.execute(sql)
+            books = self.cursor.fetchall()
+            book_list = "\n".join(
+                [f"书籍ID: {book[0]}, 标题: {book[1]}, 作者: {book[2]}, 价格: {book[3]}" for book in books])
+
+            book_id = simpledialog.askinteger("修改书籍信息", f"请选择要修改的书籍ID：\n{book_list}")
+            if book_id is not None:
+                # 获取书籍信息
+                sql = "SELECT * FROM books WHERE id = %s"
+                self.cursor.execute(sql, book_id)
+                book = self.cursor.fetchone()  # 从数据库获取查询结果的第一行，即所选书籍的详细信息
+
+                if book:
+                    # 如果成功获取到书籍信息，执行以下操作
+
+                    # 创建一个新的顶级窗口，用于修改书籍信息
+                    modify_book_window = tk.Toplevel(self.root)  # 主窗口为self.root
+                    modify_book_window.title("修改书籍信息")
+
+                    # 创建标签和文本框用于显示和输入书籍信息
+
+                    # 标签：书名
+                    title_label = tk.Label(modify_book_window, text="书名：", font=self.large_font)
+
+                    # 文本框：书名，用于显示和输入书籍的标题，并将其初始化为书籍信息中的标题
+                    title_entry = tk.Entry(modify_book_window, font=self.large_font)
+                    title_entry.insert(0, book[1])
+                    # 将插入的文本放在索引 0 处，确保了这些已有信息会显示在文本框中的最前面，用户可以立即看到并编辑它们
+
+                    # 标签：作者
+                    author_label = tk.Label(modify_book_window, text="作者：", font=self.large_font)
+
+                    # 文本框：作者，用于显示和输入书籍的作者，并将其初始化为书籍信息中的作者
+                    author_entry = tk.Entry(modify_book_window, font=self.large_font)
+                    author_entry.insert(0, book[2])
+
+                    # 标签：价格
+                    price_label = tk.Label(modify_book_window, text="价格：", font=self.large_font)
+
+                    # 文本框：价格，用于显示和输入书籍的价格，并将其初始化为书籍信息中的价格
+                    price_entry = tk.Entry(modify_book_window, font=self.large_font)
+                    price_entry.insert(0, book[3])
+
+                    # 创建一个按钮，用于触发修改书籍信息的操作，同时将书籍ID和修改窗口作为参数传递给修改方法
+                    modify_button = tk.Button(modify_book_window, text="修改",
+                                              command=lambda: self.modify_book_in_database(book_id, title_entry.get(),
+                                                                                           author_entry.get(),
+                                                                                           price_entry.get(),
+                                                                                           modify_book_window),
+                                              # command=lambda: ...：这部分是按钮的命令参数，它告诉按钮在单击时执行的操作
+                                              # lambda 是一个匿名函数，用于创建一个临时的函数，它没有函数名
+                                              # 用户单击 "修改" 按钮时,信息保存到数据库中，并在完成后关闭修改窗口
+                                              font=self.large_font)
+
+                    # 将创建的标签、文本框和按钮添加到修改书籍信息的窗口中
+                    title_label.pack()
+                    title_entry.pack()
+                    author_label.pack()
+                    author_entry.pack()
+                    price_label.pack()
+                    price_entry.pack()
+                    modify_button.pack()
+
+                else:
+                    messagebox.showerror("修改失败", "未找到该书籍！")
+
+        except Exception as e:
+            messagebox.showerror("修改失败", f"修改失败：{str(e)}")
+
+    def modify_book_in_database(self, book_id, title, author, price, window):
+        try:
+            # 更新书籍信息
+            sql = "UPDATE books SET title = %s, author = %s, price = %s WHERE id = %s"
+            self.cursor.execute(sql, (title, author, price, book_id))
+            self.conn.commit()
+            messagebox.showinfo("修改成功", "书籍信息修改成功！")
+            window.destroy()
+        except Exception as e:
+            self.conn.rollback()
+            messagebox.showerror("修改失败", f"修改失败：{str(e)}")
+
+    # 删除书籍的方法
+    def delete_book(self):
+        try:
+            # 查询所有书籍信息
+            sql = "SELECT * FROM books"
+            self.cursor.execute(sql)
+            books = self.cursor.fetchall()
+
+            # 构建包含书籍信息的文本列表
+            book_list = "\n".join(
+                [f"书籍ID: {book[0]}, 标题: {book[1]}, 作者: {book[2]}, 价格: {book[3]}" for book in books])
+
+            # 弹出对话框，要求用户选择要删除的书籍ID
+            book_id = simpledialog.askinteger("删除书籍", f"请选择要删除的书籍ID：\n{book_list}")
+
+            # 如果用户选择了书籍ID
+            if book_id is not None:
+                # 构建 SQL 查询语句，从数据库中删除指定书籍ID的书籍记录
+                sql = "DELETE FROM books WHERE id = %s"
+                self.cursor.execute(sql, book_id)
+
+                # 提交数据库事务，将删除操作保存到数据库中
+                self.conn.commit()
+
+                # 显示删除成功的消息框
+                messagebox.showinfo("删除成功", "书籍删除成功！")
+
+        except Exception as e:
+            # 如果发生错误，回滚数据库事务，取消删除操作，并显示错误消息框
+            self.conn.rollback()
+            messagebox.showerror("删除失败", f"删除失败：{str(e)}")
+
+    def view_books_admin(self):
+        self.view_books()
+
+    def view_users(self):
+        try:
+            sql = "SELECT * FROM user_info"
+            self.cursor.execute(sql)
+            users = self.cursor.fetchall()
+            user_list = "\n".join(
+                [f"用户ID: {user[0]}, 用户名: {user[1]}, 密码: {user[2]}" for user in users])
+            # for 循环的作用是遍历并处理 users 列表中的每个用户信息
+            messagebox.showinfo("用户信息列表", user_list)
+        except Exception as e:
+            messagebox.showerror("查询失败", f"查询失败：{str(e)}")
+
+    # view_orders 方法
+    def view_orders(self):
+        try:
+            # 查询订单信息并按订单日期降序排序
+            sql = """
+                SELECT o.id, u.username, b.title, b.author, b.price, o.order_date
+                FROM orders o
+                JOIN user_info u ON o.user_id = u.id
+                JOIN books b ON o.book_id = b.id
+                ORDER BY o.order_date DESC
+            """
+            self.cursor.execute(sql)
+            orders = self.cursor.fetchall()
+
+            # 创建一个新的顶级窗口来显示订单信息
+            orders_window = tk.Toplevel(self.root)
+            orders_window.title("订单信息列表")
+
+            # 创建一个表格
+            tree = ttk.Treeview(orders_window, columns=("Username", "Book Title", "Author", "Price", "Order Date"),
+                                show="headings")  # show="headings"指示表格只显示列标题而不显示行号
+            tree.heading("#1", text="Username", anchor="center")  # anchor="center"将文本居中对齐
+            tree.heading("#2", text="Book Title", anchor="center")
+            tree.heading("#3", text="Author", anchor="center")
+            tree.heading("#4", text="Price", anchor="center")
+            tree.heading("#5", text="Order Date", anchor="center")
+
+            # 设置列宽度（根据需要调整列宽度）
+            column_widths = [150, 150, 150, 150, 150]
+            for i, column in enumerate(("#1", "#2", "#3", "#4", "#5")):
+                tree.column(column, width=column_widths[i], anchor="center")
+
+            # 添加垂直滚动条
+            scrollbar = ttk.Scrollbar(orders_window, orient="vertical", command=tree.yview)
+            # 使用ttk.Scrollbar创建一个垂直滚动条，设置其方向为垂直（orient="vertical"），并将其命令绑定到tree.yview以便滚动表格
+            tree.configure(yscroll=scrollbar.set)
+
+            # 遍历订单并插入数据行
+            for order in orders:
+                formatted_date = order[5].strftime("%Y-%m-%d %H:%M:%S")  # 格式化日期
+                tree.insert("", "end", values=(order[1], order[2], order[3], order[4], formatted_date))
+
+            # 添加表格和滚动条到窗口
+            tree.pack(fill="both", expand=True)
+            # fill="both"表示填充整个窗口，并使用expand=True使表格随窗口的大小变化而自动扩展
+            scrollbar.pack(fill="y", side="right")
+
+        except Exception as e:
+            messagebox.showerror("查询失败", f"查询失败：{str(e)}")
+
+    def exit(self):  # 销毁主窗口，退出应用程序
+        self.root.destroy()
+
+    def logout(self):
+        self.current_user = None  # 将当前用户属性设置为 None，表示用户已注销
+        self.show_login_frame()  # 调用 show_login_frame 方法，显示登录界面
+
+
+if __name__ == "__main__":  # 检查当前脚本是否作为主程序运行
+    root = tk.Tk()  # 创建一个名为root的主窗口实例
+    app = OnlineBookstoreGUI(root)  # 创建一个OnlineBookstoreGUI类的实例，并传入主窗口作为参数
+    root.mainloop()  # 启动主事件循环，使应用程序开始响应用户操作

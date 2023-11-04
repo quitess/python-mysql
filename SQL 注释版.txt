@@ -1,0 +1,110 @@
+-- 创建数据库
+CREATE DATABASE IF NOT EXISTS bookstore;
+
+-- 使用创建的数据库
+USE bookstore;
+
+-- 创建用户信息表格
+/*
+INT: 数据类型，表示这列中的数据将是整数类型。
+AUTO_INCREMENT: 这是一个属性，通常用于主键列。它指示数据库管理系统自动为每行生成唯一的递增整数值。这意味着每次插入新记录时，这个列的值都会自动增加，以确保每条记录都有一个唯一的标识符
+*/
+
+CREATE TABLE user_info (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(255) NOT NULL,
+    password VARCHAR(255) NOT NULL
+);
+
+-- 创建用户权限表格
+CREATE TABLE user_permissions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+		user_id INT,
+    is_admin TINYINT(1) DEFAULT 0,
+		-- 该列存储名为TINYINT的小整数（通常用于表示布尔值）
+		-- DEFAULT 0指示如果没有指定值，将使用默认值0
+    FOREIGN KEY (user_id) REFERENCES user_info(id)
+		-- 确保只能插入已经存在于user_info表格中的用户的权限信息
+);
+
+-- 创建书籍信息表格
+/*
+DECIMAL(10,2)：数据类型，表示这个列将存储十进制数值
+总共有10个数字位，其中2个是小数位
+*/
+CREATE TABLE books (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    author VARCHAR(255) NOT NULL,
+    price DECIMAL(10, 2) NOT NULL
+);
+
+-- 创建订单信息表格
+/*
+DEFAULT CURRENT_TIMESTAMP：是一个默认值设置，表示如果不提供订单日期和时间的值，将使用当前的日期和时间作为默认值
+*/
+CREATE TABLE orders (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    book_id INT,
+    order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+		-- TIMESTAMP：数据类型，表示这个列将存储日期和时间信息
+    FOREIGN KEY (user_id) REFERENCES user_info(id),
+    FOREIGN KEY (book_id) REFERENCES books(id)
+);
+
+-- 插入至少 10 条用户信息记录示例
+INSERT INTO user_info (username, password) VALUES
+    ('小明', 'password1'),
+    ('小红', 'password2'),
+    ('小刚', 'password3'),
+    ('小丽', 'password4'),
+    ('小华', 'password5'),
+    ('小雨', 'password6'),
+    ('小翔', 'password7'),
+    ('小婷', 'password8'),
+    ('小杰', 'password9'),
+    ('小花', 'password10'),
+    ('王小明', 'password11'); -- 第十一个用户
+
+-- 插入至少 10 条用户权限记录示例
+INSERT INTO user_permissions (user_id, is_admin) VALUES
+    (1, 1), -- 用户1是管理员
+    (2, 0), -- 用户2是普通用户
+    (3, 0),
+    (4, 0),
+    (5, 0),
+    (6, 0),
+    (7, 1), -- 用户7是管理员
+    (8, 0),
+    (9, 0),
+    (10, 0),
+    (11, 0); -- 第十一个用户
+
+-- 插入至少 10 条书籍信息记录示例
+INSERT INTO books (title, author, price) VALUES
+    ('C语言基础', '张三', 19.99),
+    ('Python编程入门', '李四', 24.95),
+    ('数据库设计与实践', '王五', 14.99),
+    ('Web开发指南', '赵六', 29.99),
+    ('算法与数据结构', '钱七', 9.99),
+    ('人工智能导论', '孙八', 12.99),
+    ('网络安全基础', '周九', 17.99),
+    ('移动应用开发', '吴十', 22.50),
+    ('大数据分析', '刘一', 27.75),
+    ('机器学习实践', '陈二', 34.99),
+    ('新书名称', '欧阳文', 39.99); -- 第十一个书籍
+
+-- 插入至少 10 条订单记录示例
+INSERT INTO orders (user_id, book_id) VALUES
+    (1, 1),   -- 用户1购买了书籍1
+    (1, 2),   -- 用户1购买了书籍2
+    (2, 3),   -- 用户2购买了书籍3
+    (2, 4),   -- 用户2购买了书籍4
+    (3, 5),   -- 用户3购买了书籍5
+    (3, 6),   -- 用户3购买了书籍6
+    (4, 7),   -- 用户4购买了书籍7
+    (4, 8),   -- 用户4购买了书籍8
+    (5, 9),   -- 用户5购买了书籍9
+    (5, 10),  -- 用户5购买了书籍10
+    (11, 11); -- 第十一个用户购买了第十一个书籍
