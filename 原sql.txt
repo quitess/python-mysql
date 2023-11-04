@@ -1,0 +1,31 @@
+-- 创建数据库
+CREATE DATABASE IF NOT EXISTS bookstore;
+
+-- 选择数据库
+USE bookstore;
+
+-- 创建用户表格
+CREATE TABLE IF NOT EXISTS users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(255) NOT NULL,
+    password VARCHAR(255) NOT NULL
+);
+
+-- 创建书籍表格
+CREATE TABLE IF NOT EXISTS books (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    author VARCHAR(255) NOT NULL,
+    price DECIMAL(10, 2) NOT NULL
+);
+
+-- 插入示例用户数据
+INSERT INTO users (username, password) VALUES
+    ('user1', 'hashed_password1'),
+    ('user2', 'hashed_password2');
+
+-- 插入示例书籍数据
+INSERT INTO books (title, author, price) VALUES
+    ('Book 1', 'Author A', 19.99),
+    ('Book 2', 'Author B', 29.99),
+    ('Book 3', 'Author C', 9.99);
